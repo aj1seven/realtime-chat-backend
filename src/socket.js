@@ -1,10 +1,34 @@
-module.exports = (io) => {
-    io.on("connection", (socket) => {
-        console.log("New client connected", socket.id);
+const jwt = require("jsonwebtoken");
+const User = require("./models/User");
 
-        socket.on("joinRoom", (room) => {
-            socket.join(room);
-            console.log(`Socket ${socket.id} joined room ${room}`);
-        });
+module.exports = (io) => {
+  io.use(async (socket, next) => {
+    const token = socket.handshake.auth?.token;
+    if (!token) return next(new Error("Authentication error"));
+
+    try {
+      const decoded = jwt.verify(token, process.env.JWT_SECRET);
+      socket.userId = decoded.userId;
+      next();
+    } catch {
+      next(new Error("Authentication error"));
+    }
+  });
+
+  io.on("connection", async (socket) => {
+    console.log("🟢 User connected:", socket.userId);
+
+    await User.update(
+      { isOnline: true },
+      { where: { id: socket.userId } }
+    );
+
+    socket.on("disconnect", async () => {
+      console.log("🔴 User disconnected:", socket.userId);
+      await User.update(
+        { isOnline: false },
+        { where: { id: socket.userId } }
+      );
     });
+  });
 };
