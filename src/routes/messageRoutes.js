@@ -20,3 +20,4 @@ router.post("/mark-as-read", messageController.markAsRead);
 
 module.exports = router;
 
+
