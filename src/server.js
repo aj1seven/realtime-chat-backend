@@ -5,7 +5,8 @@ const app = require('./app');
 const server = http.createServer(app);
 const io = new Server(server, {
     cors: {
-        original: "*",
+        origin: "*",
+        methods: ["GET", "POST"],
     },
 });
 
